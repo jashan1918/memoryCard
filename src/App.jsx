@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import Card from "./Card";
+import GameStart from "./GameStart";
 
 function App() {
   const [pokemon, setPokemon] = useState([]);
@@ -19,7 +20,7 @@ function App() {
     
     */
 
-  const getData = async () => {
+  const startGame = async () => {
     const response = await axios("https://pokeapi.co/api/v2/pokemon?limit=10");
 
     console.log(response.data.results);
@@ -35,6 +36,12 @@ function App() {
     const pokemonData = allData.map((res) => res.data);
 
     setPokemon(pokemonData);
+
+    // ✅ RESET STATE
+    setScore(0);
+    setClickedCards([]);
+
+    setGameState("playing");
   };
 
   function shuffledArray(array) {
@@ -50,41 +57,28 @@ function App() {
   }
 
   const handleClick = (name) => {
+    // ❌ LOSE
     if (clickedCards.includes(name)) {
-      // ❌ LOSE
       setGameState("Lose");
 
       if (score > highScore) {
         setHighScore(score);
       }
 
-      if (clickedCards.includes(name)) {
-        setGameState("Lose");
-
-        if (score > highScore) {
-          setHighScore(score);
-        }
-
-        return;
-      }
       return;
     }
 
-    // ✅ CORRECT CLICK
-    setScore((prev) => {
-      const updated = prev + 1;
+    // ✅ CALCULATE NEXT STATE
+    const newScore = score + 1;
+    const newClickedCards = [...clickedCards, name];
 
-      if (updated === pokemon.length) {
-        setGameState("Win");
-      }
+    setScore(newScore);
+    setClickedCards(newClickedCards);
 
-      return updated;
-    });
-    setClickedCards((prev) => [...prev, name]);
-
-    // ✅ WIN CHECK
-    if (score === pokemon.length) {
+    // ✅ WIN
+    if (newScore === pokemon.length) {
       setGameState("Win");
+      setHighScore(10);
       return;
     }
 
@@ -95,31 +89,84 @@ function App() {
   return (
     <>
       <div className="h-screen w-screen bg-purple-950 ">
+        {gameState === "start" && (
+          <>
+            <GameStart startGame={startGame} />
+          </>
+        )}
         <div
           className="absolute top-0 left-0 w-full h-40 
                   bg-linear-to-b from-black to-transparent pointer-events-none"
         ></div>
-        <button
-          onClick={getData}
-          className="bg-purple-500 text-white font-bold px-5 py-3 cursor-pointer relative z-10"
-        >
-          Get Data
-        </button>
 
-        {gameState === "Lose" && <h1 className="text-white text-2xl font-bold">You Lost</h1>}
-        {gameState === "Win" && <h1 className="text-white text-2xl font-bold">You Won</h1>}
+        {gameState === "playing" && (
+          <>
+            <div className="flex items-center pt-20 flex-col">
+              <h1 className="text-white text-2xl font-bold">Score:- {score}</h1>
+              <h1 className="text-white text-2xl font-bold">
+                HighScore {highScore}
+              </h1>
+            </div>
 
-        <h1 className="text-white text-2xl font-bold">Score:- {score}</h1>
-        <h1 className="text-white text-2xl font-bold">HighScore {highScore}</h1>
+            <div className="flex flex-wrap justify-center gap-6 mt-10">
+              {pokemon.map((elem) => (
+                <Card
+                  key={elem.name}
+                  pokemon={elem}
+                  onClick={() => handleClick(elem.name)}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
-        {pokemon.map((elem, idx) => (
-          // <img key={idx} src={elem.sprites.front_default} />
-          <Card
-            key={elem.name}
-            pokemon={elem}
-            onClick={() => handleClick(elem.name)}
-          />
-        ))}
+        {gameState === "Lose" && (
+          <div className="flex items-center justify-center h-screen bg-purple-950">
+            <div className="bg-linear-to-b from-purple-600 to-purple-800 p-8 rounded-2xl shadow-2xl text-center w-80">
+              <h1 className="text-white text-3xl font-bold mb-4">
+                You Lost 😔
+              </h1>
+
+              <p className="text-white text-lg mb-2">
+                Your Score: <span className="font-semibold">{score}</span>
+              </p>
+
+              <p className="text-white text-lg mb-6">
+                High Score: <span className="font-semibold">{highScore}</span>
+              </p>
+
+              <button
+                onClick={startGame}
+                className="bg-white text-purple-700 font-semibold px-6 py-2 rounded-xl hover:bg-gray-200 transition"
+              >
+                Restart Game
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameState === "Win" && (
+          <div className="flex items-center justify-center h-screen bg-purple-950">
+            <div className="bg-linear-to-b from-purple-600 to-purple-800 p-8 rounded-2xl shadow-2xl text-center w-80">
+              <h1 className="text-white text-3xl font-bold mb-4">You Won 🎉</h1>
+
+              <p className="text-white text-lg mb-2">
+                Your Score: <span className="font-semibold">{score}</span>
+              </p>
+
+              <p className="text-white text-lg mb-6">
+                High Score: <span className="font-semibold">{highScore}</span>
+              </p>
+
+              <button
+                onClick={startGame}
+                className="bg-white text-purple-700 font-semibold px-6 py-2 rounded-xl hover:bg-gray-200 transition"
+              >
+                Restart Game
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
