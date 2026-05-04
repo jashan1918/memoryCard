@@ -23,7 +23,7 @@ function Card({ pokemon, onClick }) {
         />
       </div>
 
-      <p className="text-white text-center mt-3 font-semibold capitalize">
+      <p className="text-white text-xl text-center mt-3 font-semibold capitalize">
         {pokemon.name}
       </p>
     </div>
