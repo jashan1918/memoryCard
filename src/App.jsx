@@ -1,8 +1,23 @@
 import axios from "axios";
 import { useState } from "react";
+import Card from "./Card";
 
 function App() {
   const [pokemon, setPokemon] = useState([]);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [clickedCards, setClickedCards] = useState([]);
+  const [gameState, setGameState] = useState("start"); //start playing win lose
+
+  /* when card is clicked
+    check if its alrady clicked? YES -> Lose 
+    ELSE :- 
+    increase score
+    store card
+    check win
+    shuffle
+    
+    */
 
   const getData = async () => {
     const response = await axios("https://pokeapi.co/api/v2/pokemon?limit=10");
@@ -22,6 +37,61 @@ function App() {
     setPokemon(pokemonData);
   };
 
+  function shuffledArray(array) {
+    const newArray = [...array];
+
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const random = Math.floor(Math.random() * (i + 1));
+
+      [newArray[i], newArray[random]] = [newArray[random], newArray[i]];
+    }
+
+    return newArray;
+  }
+
+  const handleClick = (name) => {
+    if (clickedCards.includes(name)) {
+      // ❌ LOSE
+      setGameState("Lose");
+
+      if (score > highScore) {
+        setHighScore(score);
+      }
+
+      if (clickedCards.includes(name)) {
+        setGameState("Lose");
+
+        if (score > highScore) {
+          setHighScore(score);
+        }
+
+        return;
+      }
+      return;
+    }
+
+    // ✅ CORRECT CLICK
+    setScore((prev) => {
+      const updated = prev + 1;
+
+      if (updated === pokemon.length) {
+        setGameState("Win");
+      }
+
+      return updated;
+    });
+    setClickedCards((prev) => [...prev, name]);
+
+    // ✅ WIN CHECK
+    if (score === pokemon.length) {
+      setGameState("Win");
+      return;
+    }
+
+    // 🔁 SHUFFLE
+    setPokemon(shuffledArray(pokemon));
+  };
+
   return (
     <>
       <div className="h-screen w-screen bg-purple-950 ">
@@ -35,8 +105,20 @@ function App() {
         >
           Get Data
         </button>
+
+        {gameState === "Lose" && <h1 className="text-white text-2xl font-bold">You Lost</h1>}
+        {gameState === "Win" && <h1 className="text-white text-2xl font-bold">You Won</h1>}
+
+        <h1 className="text-white text-2xl font-bold">Score:- {score}</h1>
+        <h1 className="text-white text-2xl font-bold">HighScore {highScore}</h1>
+
         {pokemon.map((elem, idx) => (
-          <img key={idx} src={elem.sprites.front_default} />
+          // <img key={idx} src={elem.sprites.front_default} />
+          <Card
+            key={elem.name}
+            pokemon={elem}
+            onClick={() => handleClick(elem.name)}
+          />
         ))}
       </div>
     </>
